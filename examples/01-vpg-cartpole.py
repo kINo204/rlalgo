@@ -32,7 +32,7 @@ class VPNPolicy(PolicyGradientPolicy):
 
 
 policy: Policy = VPNPolicy()
-algo: Algorithm = VPG()
+algo: Algorithm = VPG(epochs=100)
 env: Env = GymEnv("CartPole-v1", nenvs=2)
 
 algo.train(policy, env)
