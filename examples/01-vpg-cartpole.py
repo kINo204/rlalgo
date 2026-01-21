@@ -5,6 +5,7 @@ import torch as th
 from torch import nn, Tensor
 import torch.nn.functional as F
 import gymnasium as gym
+from gymnasium.wrappers.vector import NormalizeObservation as NormObs
 
 class VPNPolicy(PolicyGradientPolicy):
     def __init__(self) -> None:
@@ -33,9 +34,7 @@ class VPNPolicy(PolicyGradientPolicy):
 
 
 policy: Policy = VPNPolicy()
-algo: Algorithm = VPG(epochs=10)
-env: Env = GymEnv("CartPole-v1", nenvs=4,
-                  wrapper=(gym.wrappers.NormalizeObservation,
-                           gym.wrappers.vector.NormalizeObservation))
+algo: Algorithm = VPG(epochs=100)
+env: Env = GymEnv(NormObs(gym.make_vec('CartPole-v1', num_envs=4)))
 
 algo.train(policy, env)

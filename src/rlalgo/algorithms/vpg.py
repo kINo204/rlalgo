@@ -16,6 +16,7 @@ class VPG(Algorithm[PolicyGradientPolicy]):
     @override
     def train(self, model: PolicyGradientPolicy, env: Env) -> None:
         opt = th.optim.Adam(model.parameters(), self.lr)
+        env = (env)
         with logging('epoch', mode='plot'):
             for _ in range(self.epochs):
                 opt.zero_grad()
@@ -36,7 +37,8 @@ class VPG(Algorithm[PolicyGradientPolicy]):
         obss, acts, rews = [th.stack(l) for l in (obss, acts, rews)]
         logps = model.log_prob(obss, acts)
         gs = rews.flip(0).cumsum(0).flip(0)
-        loss = th.mean(logps * gs)
-        log(r'$\bar{r}_\tau$', rews.sum(dim=0).mean().item())
+        loss = - th.mean(logps * gs)
+        log(r'$\bar{r}(\tau)$', rews.sum(dim=0).mean().item())
+        log(r'$\mathcal{L}(\tau)$', loss.item())
         return loss
 
