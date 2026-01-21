@@ -4,6 +4,7 @@ from rlalgo.algorithms import VPG
 import torch as th
 from torch import nn, Tensor
 import torch.nn.functional as F
+import gymnasium as gym
 
 class VPNPolicy(PolicyGradientPolicy):
     def __init__(self) -> None:
@@ -32,7 +33,9 @@ class VPNPolicy(PolicyGradientPolicy):
 
 
 policy: Policy = VPNPolicy()
-algo: Algorithm = VPG(epochs=100)
-env: Env = GymEnv("CartPole-v1", nenvs=2)
+algo: Algorithm = VPG(epochs=10)
+env: Env = GymEnv("CartPole-v1", nenvs=4,
+                  wrapper=(gym.wrappers.NormalizeObservation,
+                           gym.wrappers.vector.NormalizeObservation))
 
 algo.train(policy, env)

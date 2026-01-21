@@ -4,7 +4,6 @@ from ..env import Env
 from ..log import logging, log
 import torch as th
 from torch import Tensor
-from torch.optim import Optimizer
 from dataclasses import dataclass
 from typing import override
 
@@ -14,8 +13,17 @@ class VPG(Algorithm[PolicyGradientPolicy]):
     epochs: int = 1
     lr: float = 0.001
 
+    @override
+    def train(self, model: PolicyGradientPolicy, env: Env) -> None:
+        opt = th.optim.Adam(model.parameters(), self.lr)
+        with logging('epoch', mode='plot'):
+            for _ in range(self.epochs):
+                opt.zero_grad()
+                self.trajectory(model, env).backward()
+                opt.step()
+
     @staticmethod
-    def trajectory(opt: Optimizer, model: PolicyGradientPolicy, env: Env) -> Tensor:
+    def trajectory(model: PolicyGradientPolicy, env: Env) -> Tensor:
         obss = []; acts = []; rews = []
         obs = env.reset()
         while True:
@@ -32,11 +40,3 @@ class VPG(Algorithm[PolicyGradientPolicy]):
         log(r'$\bar{r}_\tau$', rews.sum(dim=0).mean().item())
         return loss
 
-    @override
-    def train(self, model: PolicyGradientPolicy, env: Env) -> None:
-        opt = th.optim.Adam(model.parameters(), self.lr)
-        with logging(mode='plot'):
-            for _ in range(self.epochs):
-                opt.zero_grad()
-                self.trajectory(opt, model, env).backward()
-                opt.step()

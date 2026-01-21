@@ -1,5 +1,4 @@
 import numpy as np
-import gymnasium as gym
 import torch as th
 from torch import Tensor
 from typing import Protocol, override
@@ -14,14 +13,17 @@ class Env[ObsT, ActT, RewT, ArrT](Protocol):
     def step(self, action: ActT) -> tuple[ObsT, RewT, ArrT, ArrT]:
         raise NotImplementedError
 
+import gymnasium as gym
+
 class GymEnv(Env):
     env: gym.Env | gym.vector.VectorEnv
 
-    def __init__(self, envid: str, nenvs: int = 1, **kwargs) -> None:
+    _IDENT = lambda x: x
+    def __init__(self, envid: str, nenvs: int = 1, wrapper=(_IDENT, _IDENT), **kwargs) -> None:
         if nenvs == 1:
-            self.env = gym.make(envid, **kwargs)
+            self.env = wrapper[0](gym.make(envid, **kwargs))
         else:
-            self.env = gym.make_vec(envid, nenvs)
+            self.env = wrapper[1](gym.make_vec(envid, nenvs))
 
     @override
     def reset(self) -> Tensor:
@@ -30,7 +32,7 @@ class GymEnv(Env):
 
     @override
     def step(self, action: Tensor) -> tuple[Tensor, Tensor, bool, bool]:
-        a = action.to(th.int32)\
+        a = action.to(th.int32) \
             .numpy().reshape(self.env.action_space.shape)
         obs, rew, term, trunc, _info = self.env.step(a)
         obs = th.as_tensor(obs)
@@ -39,5 +41,4 @@ class GymEnv(Env):
             term = any(term)
         if type(trunc) is np.ndarray:
             trunc = any(trunc)
-
         return obs, rew, term, trunc

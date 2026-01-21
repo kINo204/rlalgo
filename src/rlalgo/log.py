@@ -18,21 +18,23 @@ class Logger():
     def plot(self, ax: Axes) -> None:
         for name, values in self.data.items():
             ax.plot(values, label=name)
+        ax.legend()
 
-logger: Logger
+_logger: Logger
 
 @contextmanager
-def logging(mode: str | None = None):
-    global logger
-    logger = Logger()
+def logging(tag: str, mode: str | None = None):
+    global _logger
+    _logger = Logger()
     yield
     if not mode:
-        print(logger.data)
+        print(_logger.data)
     elif mode == 'plot':
         _, ax = plt.subplots(1,1)
-        logger.plot(ax)
+        _logger.plot(ax)
+        ax.set_xlabel(tag)
         plt.show(block=True)
 
 def log(*args):
-    global logger
-    logger.log(*args)
+    global _logger
+    _logger.log(*args)
