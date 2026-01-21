@@ -14,7 +14,7 @@ class VPG(Algorithm[PolicyGradientPolicy]):
     gamma: float = 0.99
     epochs: int = 1000
     stop_window: int = 20
-    lr: float = 0.008
+    lr: float = 0.006
 
     @override
     def train(self, model: PolicyGradientPolicy, env: Env) -> None:
@@ -27,7 +27,7 @@ class VPG(Algorithm[PolicyGradientPolicy]):
                 log(r'$\bar{r}(\tau)$', mean_rew.item())
                 log(r'$\mathcal{L}(\tau)$', loss.item())
 
-                if mean_rew < 490:
+                if mean_rew < 480:
                     window = self.stop_window
                 else:
                     window -= 1
@@ -42,9 +42,7 @@ class VPG(Algorithm[PolicyGradientPolicy]):
         obss, acts, rews = [th.stack(l) for l in rollout(model, env)]
         logps = model.log_prob(obss, acts)
         gs = rews.flip(0).cumsum(0).flip(0)
-        gs = (gs - gs.mean()) / gs.std()
-        # gs = (gs - gs.min()) / (gs.max() - gs.min())
-
+        gs = (gs - gs.mean()) / gs.std() # Key step!
         loss = - th.mean(logps * gs)
         mean_rew = rews.sum(dim=0).mean()
         return loss, mean_rew
