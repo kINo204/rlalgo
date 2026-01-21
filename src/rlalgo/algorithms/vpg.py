@@ -2,43 +2,49 @@ from ..algorithm import Algorithm
 from ..policy import PolicyGradientPolicy
 from ..env import Env
 from ..log import logging, log
+from ..utils import rollout
 import torch as th
 from torch import Tensor
+import torch.nn.functional as F
 from dataclasses import dataclass
 from typing import override
 
 @dataclass
 class VPG(Algorithm[PolicyGradientPolicy]):
     gamma: float = 0.99
-    epochs: int = 1
-    lr: float = 0.001
+    epochs: int = 1000
+    stop_window: int = 20
+    lr: float = 0.008
 
     @override
     def train(self, model: PolicyGradientPolicy, env: Env) -> None:
         opt = th.optim.Adam(model.parameters(), self.lr)
-        env = (env)
         with logging('epoch', mode='plot'):
-            for _ in range(self.epochs):
+            window = self.stop_window
+            for e in range(self.epochs):
+                loss, mean_rew = self.trajectory(model, env)
+                print('epoch:', e, 'mean-reward:', mean_rew)
+                log(r'$\bar{r}(\tau)$', mean_rew.item())
+                log(r'$\mathcal{L}(\tau)$', loss.item())
+
+                if mean_rew < 490:
+                    window = self.stop_window
+                else:
+                    window -= 1
+                    if window == 0: break
+
                 opt.zero_grad()
-                self.trajectory(model, env).backward()
+                loss.backward()
                 opt.step()
 
     @staticmethod
-    def trajectory(model: PolicyGradientPolicy, env: Env) -> Tensor:
-        obss = []; acts = []; rews = []
-        obs = env.reset()
-        while True:
-            act = model.act(obs)
-            obss.append(obs); acts.append(act)
-            obs, rew, term, trunc = env.step(act)
-            rews.append(rew)
-            if term or trunc:
-                break
-        obss, acts, rews = [th.stack(l) for l in (obss, acts, rews)]
+    def trajectory(model: PolicyGradientPolicy, env: Env) -> tuple[Tensor, Tensor]:
+        obss, acts, rews = [th.stack(l) for l in rollout(model, env)]
         logps = model.log_prob(obss, acts)
         gs = rews.flip(0).cumsum(0).flip(0)
-        loss = - th.mean(logps * gs)
-        log(r'$\bar{r}(\tau)$', rews.sum(dim=0).mean().item())
-        log(r'$\mathcal{L}(\tau)$', loss.item())
-        return loss
+        gs = (gs - gs.mean()) / gs.std()
+        # gs = (gs - gs.min()) / (gs.max() - gs.min())
 
+        loss = - th.mean(logps * gs)
+        mean_rew = rews.sum(dim=0).mean()
+        return loss, mean_rew

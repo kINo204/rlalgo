@@ -37,6 +37,7 @@ class GymEnv(Env):
         obs, rew, term, trunc, _info = self.env.step(a)
         obs = th.as_tensor(obs)
         rew = th.as_tensor(rew)
+        # TODO vecenv truncation
         if type(term) is np.ndarray:
             term = any(term)
         if type(trunc) is np.ndarray:

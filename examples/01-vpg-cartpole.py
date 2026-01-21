@@ -1,11 +1,14 @@
+import rlalgo as rl
 from rlalgo import Policy, Algorithm, Env, PolicyGradientPolicy
 from rlalgo.env import GymEnv
 from rlalgo.algorithms import VPG
 import torch as th
 from torch import nn, Tensor
+from torch.distributions import Categorical
 import torch.nn.functional as F
 import gymnasium as gym
-from gymnasium.wrappers.vector import NormalizeObservation as NormObs
+from gymnasium.wrappers import NormalizeObservation as NormObs
+from typing import override
 
 class VPNPolicy(PolicyGradientPolicy):
     def __init__(self) -> None:
@@ -21,12 +24,15 @@ class VPNPolicy(PolicyGradientPolicy):
     def forward(self, input: Tensor) -> Tensor:
         return self.fcs(input)
 
+    @override
     def act(self, obs: Tensor) -> Tensor:
         with th.no_grad():
             logits: Tensor = self(obs)
-            action = logits.argmax(dim=-1).unsqueeze(dim=-1)
+            dist = Categorical(logits=logits)
+            action = dist.sample().unsqueeze(-1)
             return action
 
+    @override
     def log_prob(self, obs: Tensor, act: Tensor) -> Tensor:
         logits: Tensor = self(obs)
         log_probs = F.log_softmax(logits, dim=-1)
@@ -34,7 +40,10 @@ class VPNPolicy(PolicyGradientPolicy):
 
 
 policy: Policy = VPNPolicy()
-algo: Algorithm = VPG(epochs=100)
-env: Env = GymEnv(NormObs(gym.make_vec('CartPole-v1', num_envs=4)))
+algo: Algorithm = VPG()
+env: Env = GymEnv(NormObs(gym.make('CartPole-v1')))
 
 algo.train(policy, env)
+
+env: Env = GymEnv(NormObs(gym.make('CartPole-v1', render_mode='human')))
+rl.rollout(policy, env)
