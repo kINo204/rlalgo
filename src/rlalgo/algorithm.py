@@ -1,5 +1,5 @@
 from .env import Env
-from typing import Protocol, Any
+from typing import Protocol
 from abc import abstractmethod
 
 class Algorithm[ModelT](Protocol):

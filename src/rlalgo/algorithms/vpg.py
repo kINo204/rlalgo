@@ -5,7 +5,6 @@ from ..log import logging, log
 from ..utils import rollout
 import torch as th
 from torch import Tensor
-import torch.nn.functional as F
 from dataclasses import dataclass
 from typing import override
 
