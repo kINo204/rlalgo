@@ -1,22 +1,24 @@
 from ..algorithm import Algorithm
-from ..policy import PolicyGradientPolicy
+from ..policy import ActorCriticPolicy
 from ..env import Env
 from ..log import logging, log
 from ..utils import rollout
 import torch as th
+import torch.nn.functional as F
 from torch import Tensor
 from dataclasses import dataclass
 from typing import override
 
 @dataclass
-class VPG(Algorithm[PolicyGradientPolicy]):
+class ActorCritic(Algorithm[ActorCriticPolicy]):
     gamma: float = 0.99
+    alpha: float = 0.85
     epochs: int = 1000
     stop_window: int = 20
-    lr: float = 0.006
+    lr: float = 0.008
 
     @override
-    def train(self, model: PolicyGradientPolicy, env: Env) -> None:
+    def train(self, model: ActorCriticPolicy, env: Env) -> None:
         opt = th.optim.Adam(model.parameters(), self.lr)
         with logging('epoch', mode='plot'):
             window = self.stop_window
@@ -26,7 +28,7 @@ class VPG(Algorithm[PolicyGradientPolicy]):
                 log(r'$\bar{r}(\tau)$', mean_rew.item())
                 log(r'$\mathcal{L}(\tau)$', loss.item())
 
-                if mean_rew < 480:
+                if mean_rew < 450:
                     window = self.stop_window
                 else:
                     window -= 1
@@ -36,12 +38,14 @@ class VPG(Algorithm[PolicyGradientPolicy]):
                 loss.backward()
                 opt.step()
 
-    def trajectory(self, model: PolicyGradientPolicy, env: Env) -> tuple[Tensor, Tensor]:
+    def trajectory(self, model: ActorCriticPolicy, env: Env) -> tuple[Tensor, Tensor]:
         obss, acts, rews = [th.stack(l) for l in rollout(model, env)]
-        obss = obss[:-1]
+        vs = model.value(obss)
+        with th.no_grad():
+            tds = rews + self.gamma * vs[1:] - vs[:-1]
         logps = model.log_prob(obss, acts)
-        gs = rews.flip(0).cumsum(0).flip(0)
-        gs = (gs - gs.mean()) / gs.std() # Key step!
-        loss = - th.mean(logps * gs)
+        loss_actor = - th.mean(logps * tds)
+        loss_critic = F.mse_loss(vs[:-1], rews + self.gamma * vs[1:])
+        loss = loss_actor + self.alpha * loss_critic
         mean_rew = rews.sum(dim=0).mean()
         return loss, mean_rew

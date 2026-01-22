@@ -9,10 +9,12 @@ def rollout[ObsT, ActT, RewT](policy: Policy[ObsT, ActT],
     acts: list[ActT] = []
     rews: list[RewT] = []
     obs = env.reset()
+    obss.append(obs)
     while True:
         act = policy.act(obs)
-        obss.append(obs); acts.append(act)
+        acts.append(act)
         obs, rew, term, trunc = env.step(act)
+        obss.append(obs)
         rews.append(rew)
         if term or trunc:
             break

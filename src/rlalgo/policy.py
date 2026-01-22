@@ -12,6 +12,15 @@ class Stochastic(Protocol):
     def log_prob(self, obs: Tensor, act: Tensor) -> Tensor:
         raise NotImplementedError
 
+class Critic(Protocol):
+    @abstractmethod
+    def value(self, obs: Tensor) -> Tensor:
+        raise NotImplementedError
+
 class PolicyGradientPolicy(Policy[Tensor, Tensor], Stochastic, nn.Module, ABC):
     def __init__(self) -> None:
         nn.Module.__init__(self)
+
+class ActorCriticPolicy(Critic, PolicyGradientPolicy, ABC):
+    def __init__(self) -> None:
+        PolicyGradientPolicy.__init__(self)
