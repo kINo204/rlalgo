@@ -1,10 +1,10 @@
 import rlalgo as rl
-from rlalgo import Policy, Algorithm, Env
 from rlalgo.policy import PolicyGradientPolicy
 from rlalgo.env import GymEnv
 from rlalgo.algorithms import VPG
+from rlalgo.util import rollout
 import torch as th
-from torch import nn, Tensor
+from torch import nn, Tensor, roll
 from torch.distributions import Categorical
 import torch.nn.functional as F
 import gymnasium as gym
@@ -40,11 +40,11 @@ class VPNPolicy(PolicyGradientPolicy):
         return log_probs.gather(dim=-1, index=act).squeeze()
 
 
-policy: Policy = VPNPolicy()
-algo: Algorithm = VPG()
-env: Env = GymEnv(NormObs(gym.make('CartPole-v1')))
+policy  = VPNPolicy()
+algo    = VPG()
+env     = GymEnv(NormObs(gym.make('CartPole-v1')))
 
 algo.train(policy, env)
 
-env: Env = GymEnv(NormObs(gym.make('CartPole-v1', render_mode='human')))
-rl.rollout(policy, env)
+env = GymEnv(NormObs(gym.make('CartPole-v1', render_mode='human')))
+rollout(policy, env)

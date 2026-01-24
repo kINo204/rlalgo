@@ -6,4 +6,3 @@ Docstring for rlalgo
 from .policy     import Policy
 from .algorithm  import Algorithm
 from .env        import Env
-from .utils      import rollout

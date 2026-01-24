@@ -1,51 +1,61 @@
-from ..algorithm import Algorithm
+from rlalgo.policy import PolicyGradientPolicy
+from ..algorithm import PolicyGradientAlgo
 from ..policy import ActorCriticPolicy
 from ..env import Env
 from ..log import logging, log
-from ..utils import rollout
 import torch as th
 import torch.nn.functional as F
 from torch import Tensor
 from dataclasses import dataclass
-from typing import override
+from typing import Callable, override
 
-@dataclass
-class ActorCritic(Algorithm[ActorCriticPolicy]):
-    gamma: float = 0.99
-    alpha: float = 0.85
-    epochs: int = 1000
-    stop_window: int = 20
-    lr: float = 0.008
+class ActorCritic(PolicyGradientAlgo[ActorCriticPolicy]):
+    def __init__(self,
+                 stop_threshold: int = 480,
+                 stop_window: int = 25,
+                 stop_tolerance: int = 5,
+                 epochs: int = 120,
+                 lr: float = 0.006,
+                 gamma: float = 0.99,
+                 alpha: float = 0.95,
+                 decay: float = 0.99,
+                 decay_threshold: float = 480,
+                 decay_step: int = 10,
+                 ) -> None:
+        super().__init__(epochs, stop_threshold, stop_window, stop_tolerance, lr)
+        self.gamma = gamma
+        self.alpha = alpha
+        self.decay = decay
+        self.decay_thr = decay_threshold
+        self.decay_step = decay_step
 
     @override
-    def train(self, model: ActorCriticPolicy, env: Env) -> None:
-        opt = th.optim.Adam(model.parameters(), self.lr)
+    def run(self, policy: ActorCriticPolicy, env: Env, optstep: Callable[[Tensor], None]) -> None:
+        '''Overriding for `alpha` exponential decay, stablizing a good value estimator.'''
         with logging('epoch', mode='plot'):
-            window = self.stop_window
-            for e in range(self.epochs):
-                loss, mean_rew = self.trajectory(model, env)
+            cnt: int = 0
+            e = 0
+            while True:
+                e += 1
+                loss, mean_rew = self.trajectory(policy, env)
+                optstep(loss)
                 print('epoch:', e, 'mean-reward:', mean_rew)
                 log(r'$\bar{r}(\tau)$', mean_rew.item())
                 log(r'$\mathcal{L}(\tau)$', loss.item())
 
-                if mean_rew < 450:
-                    window = self.stop_window
-                else:
-                    window -= 1
-                    if window == 0: break
+                cnt = (cnt + 1) % self.decay_step
+                if cnt == 0 and mean_rew > self.decay_thr:
+                    self.alpha = max(self.decay * self.alpha, 0.8)
+                if self.stopper.step(mean_rew):
+                    break
 
-                opt.zero_grad()
-                loss.backward()
-                opt.step()
-
-    def trajectory(self, model: ActorCriticPolicy, env: Env) -> tuple[Tensor, Tensor]:
-        obss, acts, rews = [th.stack(l) for l in rollout(model, env)]
-        vs = model.value(obss)
+    @override
+    def criterion(self, policy: ActorCriticPolicy, obss: Tensor, acts: Tensor, rews: Tensor) -> Tensor:
+        vs = policy.value(obss)
         with th.no_grad():
             tds = rews + self.gamma * vs[1:] - vs[:-1]
-        logps = model.log_prob(obss, acts)
+        logps = policy.log_prob(obss[:-1], acts)
         loss_actor = - th.mean(logps * tds)
         loss_critic = F.mse_loss(vs[:-1], rews + self.gamma * vs[1:])
         loss = loss_actor + self.alpha * loss_critic
-        mean_rew = rews.sum(dim=0).mean()
-        return loss, mean_rew
+        return loss

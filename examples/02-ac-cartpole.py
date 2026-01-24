@@ -1,8 +1,7 @@
-import rlalgo as rl
-from rlalgo import Policy, Algorithm, Env
 from rlalgo.policy import ActorCriticPolicy
 from rlalgo.env import GymEnv
 from rlalgo.algorithms import ActorCritic
+from rlalgo.util import rollout
 import torch as th
 from torch import nn, Tensor
 from torch.distributions import Categorical
@@ -46,11 +45,11 @@ class ACPolicy(ActorCriticPolicy):
         return self(obs)[1].squeeze()
 
 
-policy: Policy = ACPolicy()
-algo: Algorithm = ActorCritic()
-env: Env = GymEnv(NormObs(gym.make('CartPole-v1')))
+policy = ACPolicy()
+algo = ActorCritic()
+env = GymEnv(NormObs(gym.make('CartPole-v1')))
 
 algo.train(policy, env)
 
-env: Env = GymEnv(NormObs(gym.make('CartPole-v1', render_mode='human')))
-rl.rollout(policy, env)
+env = GymEnv(NormObs(gym.make('CartPole-v1', render_mode='human')))
+rollout(policy, env)
