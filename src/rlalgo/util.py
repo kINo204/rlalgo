@@ -1,6 +1,7 @@
 from .env import Env
 from .policy import Policy
 
+
 class SlideWindowStopper[MetricT]():
     cnt: int
     min_steps: int

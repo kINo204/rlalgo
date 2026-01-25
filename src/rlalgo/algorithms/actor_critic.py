@@ -1,13 +1,14 @@
-from rlalgo.policy import PolicyGradientPolicy
-from ..algorithm import PolicyGradientAlgo
-from ..policy import ActorCriticPolicy
-from ..env import Env
-from ..log import logging, log
+from typing import Callable, override
+
 import torch as th
 import torch.nn.functional as F
 from torch import Tensor
-from dataclasses import dataclass
-from typing import Callable, override
+
+from ..algorithm import PolicyGradientAlgo
+from ..env import Env
+from ..log import log, logging
+from ..policy import ActorCriticPolicy
+
 
 class ActorCritic(PolicyGradientAlgo[ActorCriticPolicy]):
     def __init__(self,

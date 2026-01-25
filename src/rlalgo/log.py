@@ -1,7 +1,9 @@
+from contextlib import contextmanager
+from typing import Any
+
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from typing import Any
-from contextlib import contextmanager
+
 
 class Logger():
     data: dict[str, list[Any]]

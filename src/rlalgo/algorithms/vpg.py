@@ -1,8 +1,11 @@
-from ..algorithm import PolicyGradientAlgo
-from ..policy import PolicyGradientPolicy
+from typing import override
+
 import torch as th
 from torch import Tensor
-from typing import override
+
+from ..algorithm import PolicyGradientAlgo
+from ..policy import PolicyGradientPolicy
+
 
 class VPG(PolicyGradientAlgo[PolicyGradientPolicy]):
     def __init__(self,

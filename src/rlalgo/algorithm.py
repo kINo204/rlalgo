@@ -1,11 +1,14 @@
-from .util import SlideWindowStopper, rollout
-from .policy import Policy, PolicyGradientPolicy
-from .env import Env
-from .log import logging, log
+from abc import ABC, abstractmethod
+from typing import Callable, Protocol, override
+
 import torch as th
 from torch import Tensor
-from typing import Callable, Protocol, override
-from abc import ABC, abstractmethod
+
+from .env import Env
+from .log import log, logging
+from .policy import Policy, PolicyGradientPolicy
+from .util import SlideWindowStopper, rollout
+
 
 class Algorithm[PolicyT](Protocol):
     @abstractmethod

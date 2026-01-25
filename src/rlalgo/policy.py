@@ -1,6 +1,8 @@
-from torch import nn, Tensor
-from typing import Protocol
 from abc import ABC, abstractmethod
+from typing import Protocol
+
+from torch import Tensor, nn
+
 
 class Policy[ObsT, ActT](Protocol):
     @abstractmethod

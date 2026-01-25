@@ -1,8 +1,10 @@
+from abc import abstractmethod
+from typing import Protocol, override
+
 import numpy as np
 import torch as th
 from torch import Tensor
-from typing import Protocol, override
-from abc import abstractmethod
+
 
 class Env[ObsT, ActT, RewT, ArrT](Protocol):
     @abstractmethod
@@ -13,13 +15,12 @@ class Env[ObsT, ActT, RewT, ArrT](Protocol):
     def step(self, action: ActT) -> tuple[ObsT, RewT, ArrT, ArrT]:
         raise NotImplementedError
 
-
-import gymnasium as gym
-
 class GymEnv(Env):
     '''
     Wrapper of Gymnasium (vectorized) environments.
     '''
+    import gymnasium as gym
+
     env: gym.Env | gym.vector.VectorEnv
 
     def __init__(self, env: gym.Env | gym.vector.VectorEnv) -> None:

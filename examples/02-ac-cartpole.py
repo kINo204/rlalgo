@@ -1,14 +1,17 @@
-from rlalgo.policy import ActorCriticPolicy
-from rlalgo.env import GymEnv
-from rlalgo.algorithms import ActorCritic
-from rlalgo.util import rollout
-import torch as th
-from torch import nn, Tensor
-from torch.distributions import Categorical
-import torch.nn.functional as F
-import gymnasium as gym
-from gymnasium.wrappers import NormalizeObservation as NormObs
 from typing import override
+
+import gymnasium as gym
+import torch as th
+import torch.nn.functional as F
+from gymnasium.wrappers import NormalizeObservation as NormObs
+from torch import Tensor, nn
+from torch.distributions import Categorical
+
+from rlalgo.algorithms import ActorCritic
+from rlalgo.env import GymEnv
+from rlalgo.policy import ActorCriticPolicy
+from rlalgo.util import rollout
+
 
 class ACPolicy(ActorCriticPolicy):
     def __init__(self) -> None:
