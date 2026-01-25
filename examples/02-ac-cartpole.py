@@ -48,11 +48,13 @@ class ACPolicy(ActorCriticPolicy):
         return self(obs)[1].squeeze()
 
 
-policy = ACPolicy()
+device  = th.device('cpu')
+
+policy = ACPolicy().to_dev(device)
 algo = ActorCritic()
-env = GymEnv(NormObs(gym.make('CartPole-v1')))
+env = GymEnv(NormObs(gym.make('CartPole-v1'))).to_dev(device)
 
 algo.train(policy, env)
 
-env = GymEnv(NormObs(gym.make('CartPole-v1', render_mode='human')))
+env = GymEnv(NormObs(gym.make('CartPole-v1', render_mode='human'))).to_dev(device)
 rollout(policy, env)

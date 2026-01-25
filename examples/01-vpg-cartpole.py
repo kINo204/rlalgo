@@ -41,12 +41,13 @@ class VPNPolicy(PolicyGradientPolicy):
         log_probs = F.log_softmax(logits, dim=-1)
         return log_probs.gather(dim=-1, index=act).squeeze()
 
+device  = th.device('cpu')
 
-policy  = VPNPolicy()
+policy  = VPNPolicy().to_dev(device)
 algo    = VPG()
-env     = GymEnv(NormObs(gym.make('CartPole-v1')))
+env     = GymEnv(NormObs(gym.make('CartPole-v1'))).to_dev(device)
 
 algo.train(policy, env)
 
-env = GymEnv(NormObs(gym.make('CartPole-v1', render_mode='human')))
+env = GymEnv(NormObs(gym.make('CartPole-v1', render_mode='human'))).to_dev(device)
 rollout(policy, env)
