@@ -2,7 +2,6 @@ from contextlib import contextmanager
 from typing import Any
 
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
 
 
 class Logger():
@@ -17,10 +16,13 @@ class Logger():
         else:
             self.data[name].append(value)
 
-    def plot(self, ax: Axes) -> None:
+    def plot(self) -> None:
+        _fig, axes = plt.subplots(len(self.data.keys()),1)
+        axes = iter(axes)
         for name, values in self.data.items():
-            ax.plot(values, label=name)
-        ax.legend()
+            ax = next(axes)
+            ax.plot(values)
+            ax.set_ylabel(name)
 
 _logger: Logger
 
@@ -32,9 +34,7 @@ def logging(tag: str, mode: str | None = None):
     if not mode:
         print(_logger.data)
     elif mode == 'plot':
-        _, ax = plt.subplots(1,1)
-        _logger.plot(ax)
-        ax.set_xlabel(tag)
+        _logger.plot()
         plt.show(block=True)
 
 def log(*args):

@@ -26,7 +26,10 @@ class OnPolicyAlgorithm[PolicyT: Policy](Algorithm[PolicyT], ABC):
                  stop_tolerance: int
                  ) -> None:
         self.epochs = epochs # reserved for non-early-stopping usage
-        self.stopper = SlideWindowStopper(stop_window, th.tensor(stop_threshold), stop_tolerance, min_steps=epochs)
+        self.stopper = SlideWindowStopper(lambda m: m.item() > stop_threshold,
+                                          stop_window,
+                                          stop_tolerance,
+                                          min_steps=epochs)
 
     def run(self, policy: PolicyT, env: Env, optstep: Callable[[Tensor], None]) -> None:
         '''

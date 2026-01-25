@@ -1,3 +1,5 @@
+from typing import Callable
+
 from .env import Env
 from .policy import Policy
 
@@ -12,14 +14,14 @@ class SlideWindowStopper[MetricT]():
     o_tol: int
 
     def __init__(self,
+                 criterion: Callable[[MetricT], bool],
                  window: int,
-                 threshold: MetricT,
                  tolerance: int,
-                 min_steps: int,
+                 min_steps: int = 0,
                  ) -> None:
         self.o_wnd = self.wnd = window
         self.o_tol = self.tol = tolerance
-        self.thr = threshold
+        self.criterion = criterion
         self.cnt = 0
         self.min_steps = min_steps
 
@@ -27,9 +29,7 @@ class SlideWindowStopper[MetricT]():
         self.cnt += 1
         if self.cnt < self.min_steps:
             return False
-        # elif self.cnt >= 3 * self.min_steps:
-        #     return True
-        elif metric < self.thr: # type: ignore
+        elif not self.criterion(metric):
             self.tol -= 1
             if self.tol == 0:
                 self.wnd = self.o_wnd
