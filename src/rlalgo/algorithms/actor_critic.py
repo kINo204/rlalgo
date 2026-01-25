@@ -18,9 +18,9 @@ class ActorCritic(PolicyGradientAlgo[ActorCriticPolicy]):
                  epochs: int = 120,
                  lr: float = 0.006,
                  gamma: float = 0.99,
-                 alpha: float = 0.95,
-                 decay: float = 0.99,
-                 decay_threshold: float = 480,
+                 alpha: float = 1.2,
+                 decay: float = 0.95,
+                 decay_threshold: float = 300,
                  decay_step: int = 10,
                  ) -> None:
         super().__init__(epochs, stop_threshold, stop_window, stop_tolerance, lr)
